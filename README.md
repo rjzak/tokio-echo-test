@@ -16,3 +16,6 @@ WebAssembly cannot execute `socket()`, `bind()`, or `listen()`. So instead, the 
 1. Download and install Wasmtime from https://github.com/bytecodealliance/wasmtime
    * Optionally install Wasmtime with this script: `curl https://wasmtime.dev/install.sh -sSf | bash`
 2. Provide the socket file descriptor information on the command line: `wasmtime run --tcplisten 127.0.0.1:8080 --env FD_COUNT=3 target/wasm32-wasi/debug/tokio-echo-test.wasm `.
+
+## Connecting
+Use Netcat to connect after "Listening" is displayed, `nc localhost 8080`.
