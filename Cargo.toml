@@ -1,0 +1,7 @@
+[package]
+name = "tokio-echo-test"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+tokio = { path = "../tokio/tokio", features = ["rt", "macros", "net", "io-util"] }
