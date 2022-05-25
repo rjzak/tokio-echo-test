@@ -60,7 +60,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Essentially here we're executing a new task to run concurrently,
         // which will allow all of our clients to be processed concurrently.
 
-        tokio::spawn(async move {
+        // Doesn't work with Wasi?
+
+        //tokio::spawn(async move {
             let mut buf = vec![0; 1024];
 
             // In a loop, read data from the socket and write the data back.
@@ -71,7 +73,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .expect("failed to read data from socket");
 
                 if n == 0 {
-                    return;
+                    //return;
+                    continue;
                 }
 
                 socket
@@ -79,6 +82,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .await
                     .expect("failed to write data to socket");
             }
-        });
+        //});
     }
 }
