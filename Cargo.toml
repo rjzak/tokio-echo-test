@@ -4,4 +4,4 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-tokio = { path = "../tokio/tokio", features = ["rt", "macros", "net", "io-util"] }
+tokio = { git = "https://github.com/rjzak/tokio", branch = "wasi_wip", features = ["rt", "macros", "net", "io-util"] }
