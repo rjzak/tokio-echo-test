@@ -22,12 +22,8 @@
 #![warn(rust_2018_idioms)]
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::TcpListener;
-
+use tokio::net::{TcpListener, TcpStream};
 use std::error::Error;
-
-#[cfg(target_os = "wasi")]
-use std::os::wasi::io::FromRawFd;
 
 #[cfg(not(target_os = "wasi"))]
 async fn get_tcplistener() -> TcpListener {
@@ -37,19 +33,27 @@ async fn get_tcplistener() -> TcpListener {
 
 #[cfg(target_os = "wasi")]
 async fn get_tcplistener() -> TcpListener {
+    use std::os::wasi::io::FromRawFd;
     let stdlistener = unsafe { std::net::TcpListener::from_raw_fd(3) };
-    //stdlistener.set_nonblocking(true).unwrap();
+    stdlistener.set_nonblocking(true).unwrap();
     TcpListener::from_std(stdlistener).unwrap()
 }
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<(), Box<dyn Error>> {
-   let listener = get_tcplistener().await;
+    let listener = get_tcplistener().await;
 
     println!("Listening.");
     loop {
         // Asynchronously wait for an inbound socket.
-        let (mut socket, _) = listener.accept().await?;
+        let stream_res = listener.accept().await;
+
+        if let Err(e) = stream_res {
+            println!("failed to accept connection; error = {}", e);
+            continue;
+        }
+
+        let (socket, _) = stream_res.unwrap();
         println!("Connection received.");
 
         // And this is where much of the magic of this server happens. We
@@ -60,28 +64,31 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // Essentially here we're executing a new task to run concurrently,
         // which will allow all of our clients to be processed concurrently.
 
-        // Doesn't work with Wasi?
-
-        //tokio::spawn(async move {
-            let mut buf = vec![0; 1024];
-
-            // In a loop, read data from the socket and write the data back.
-            loop {
-                let n = socket
-                    .read(&mut buf)
-                    .await
-                    .expect("failed to read data from socket");
-
-                if n == 0 {
-                    //return;
-                    continue;
-                }
-
-                socket
-                    .write_all(&buf[0..n])
-                    .await
-                    .expect("failed to write data to socket");
+        tokio::spawn(async move {
+            if let Err(e) = process(socket).await {
+                println!("failed to process connection; error = {}", e);
             }
-        //});
+        });
+    }
+}
+
+async fn process(mut socket: TcpStream) -> Result<(), Box<dyn Error>> {
+    let mut buf = vec![0; 1024];
+
+    // In a loop, read data from the socket and write the data back.
+    loop {
+        let n = socket
+            .read(&mut buf)
+            .await
+            .expect("failed to read data from socket");
+
+        if n == 0 {
+            return Ok(());
+        }
+
+        socket
+            .write_all(&buf[0..n])
+            .await
+            .expect("failed to write data to socket");
     }
 }
