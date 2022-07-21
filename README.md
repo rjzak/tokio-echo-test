@@ -2,7 +2,7 @@
 
 ## Compilation:
 1. `rustup target add wasm32-wasi`
-2. `cargo build --target=wasm32-wasi`
+2. `RUSTFLAGS="--cfg tokio_unstable" cargo build --target=wasm32-wasi`
 
 ## Testing:
 WebAssembly cannot execute `socket()`, `bind()`, or `listen()`. So instead, the WebAssembly runtime must open the socket and pass the file descriptor to the module. From there, WebAssembly may `read()`, `write()`, and handle connections.
